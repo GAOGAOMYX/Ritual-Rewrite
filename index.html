@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ritual Remix</title>
+    <style>
+        /* --- 基础样式 --- */
+        :root {
+            --red-color: #8B0000;
+            --blue-color: #0056b3;
+            --green-color: #2E7D32;
+            --bg-color: #f4f4f4;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        h1 {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: #333;
+            text-align: center;
+        }
+
+        p.instruction {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 0 20px;
+            max-width: 600px;
+        }
+
+        /* --- 游戏网格布局 --- */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 手机3列 */
+            gap: 12px;
+            max-width: 600px;
+            width: 95%;
+            perspective: 1000px;
+            margin-bottom: 40px;
+        }
+
+        @media (min-width: 600px) {
+            .game-grid {
+                grid-template-columns: repeat(4, 1fr); /* 电脑4列 */
+                gap: 15px;
+            }
+        }
+
+        /* --- 卡片样式 --- */
+        .card {
+            background-color: transparent;
+            height: 160px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .card.flip {
+            transform: rotateY(180deg);
+        }
+
+        .front, .back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 8px;
+            box-sizing: border-box;
+            backface-visibility: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+
+        /* 正面 (未翻开) */
+        .front {
+            background-color: #333;
+            color: white;
+            font-weight: bold;
+            border: 2px solid white;
+        }
+
+        .card[data-type="ritual"] .front {
+            background: repeating-linear-gradient(45deg, var(--red-color), var(--red-color) 10px, #600000 10px, #600000 20px);
+        }
+
+        .card[data-type="rewrite"] .front {
+            background: repeating-linear-gradient(45deg, var(--blue-color), var(--blue-color) 10px, #003d80 10px, #003d80 20px);
+        }
+
+        /* 背面 (翻开后) */
+        .back {
+            background-color: white;
+            transform: rotateY(180deg);
+            border: 2px solid #ddd;
+            padding-bottom: 25px; /* 底部留出空间给按钮 */
+        }
+
+        .card[data-type="ritual"] .back {
+            border-top: 8px solid var(--red-color);
+            color: var(--red-color);
+        }
+
+        .card[data-type="rewrite"] .back {
+            border-top: 8px solid var(--blue-color);
+            color: var(--blue-color);
+        }
+
+        /* --- 修复后的匹配成功样式 --- */
+        .card.matched .back {
+            border-color: var(--green-color);
+            box-shadow: 0 0 10px rgba(46, 125, 50, 0.3);
+        }
+
+        /* 绿色小标签 - 修复了定位问题 */
+        .card.matched .back::after {
+            content: "ℹ️ Tap to Review";
+            position: absolute;
+            bottom: 8px; /* 固定在底部 */
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            background-color: var(--green-color);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; bottom: 0; }
+            to { opacity: 1; bottom: 8px; }
+        }
+
+        .icon { font-size: 1.8rem; margin-bottom: 5px; }
+        .title { font-weight: bold; margin-bottom: 5px; font-size: 0.85rem; }
+        .desc { font-size: 0.75rem; color: #555; }
+
+        /* --- 弹窗样式 --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .modal {
+            background: white; padding: 25px; border-radius: 15px;
+            width: 85%; max-width: 400px; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .modal h2 { color: #333; margin-top: 10px; font-size: 1.2rem;}
+        .modal p { color: #555; line-height: 1.6; font-size: 0.9rem; text-align: left; margin-top: 15px; }
+        
+        .close-btn {
+            background-color: var(--blue-color); color: white;
+            border: none; padding: 12px 30px; border-radius: 25px;
+            cursor: pointer; font-size: 1rem; margin-top: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+        }
+        .close-btn:hover { background-color: #003d80; }
+
+        #status-bar {
+            margin-bottom: 15px; font-weight: bold;
+            background: white; padding: 8px 20px;
+            border-radius: 20px; color: var(--blue-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🃏 Ritual Remix</h1>
+    <p class="instruction">
+        Flip cards to match the <b>History (Red)</b> with the <b>Solution (Blue)</b>.<br>
+        <span style="font-size: 0.8rem; color: var(--green-color);">✨ Tip: Tap matched cards to review the lesson.</span>
+    </p>
+    
+    <div id="status-bar">Pairs Found: <span id="score">0</span> / 6</div>
+
+    <div class="game-grid" id="gameGrid">
+        </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="icon" id="modalIcon" style="font-size: 3rem;">✨</div>
+            <h2 id="modalTitle">Matched!</h2>
+            <p id="modalText">Explanation goes here...</p>
+            <button class="close-btn" onclick="closeModal()">Continue Game</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Game Data ---
+        const cardsData = [
+            // Pair 1: Space
+            { id: '1a', pairId: 1, type: 'ritual', icon: '🚪', title: 'Dark vs Light', desc: 'Men to dark rooms, women to bright salons.',
+              modalTitle: 'Spatial Stereotyping', modalText: '<b>Bias:</b> Reinforcing men as "serious" and women as "decorative".<br><br><b>Fix:</b> Design for emotional needs (privacy vs social) instead of gender categories.' },
+            { id: '1b', pairId: 1, type: 'rewrite', icon: '🌗', title: 'Choose by Mood', desc: 'Seat by privacy needs, not gender.',
+              modalTitle: 'Spatial Stereotyping', modalText: '<b>Bias:</b> Reinforcing men as "serious" and women as "decorative".<br><br><b>Fix:</b> Design for emotional needs (privacy vs social) instead of gender categories.' },
+            
+            // Pair 2: Object
+            { id: '2a', pairId: 2, type: 'ritual', icon: '🪑', title: 'High-Back Chair', desc: 'Framing women like paintings.',
+              modalTitle: 'The Female Gaze', modalText: '<b>Bias:</b> Mackintosh\'s chairs "framed" women as objects to be looked at.<br><br><b>Fix:</b> Prioritize bodily comfort and freedom over visual framing.' },
+            { id: '2b', pairId: 2, type: 'rewrite', icon: '🛋️', title: 'Comfort First', desc: 'Ergonomics over being looked at.',
+              modalTitle: 'The Female Gaze', modalText: '<b>Bias:</b> Mackintosh\'s chairs "framed" women as objects to be looked at.<br><br><b>Fix:</b> Prioritize bodily comfort and freedom over visual framing.' },
+
+            // Pair 3: Voice
+            { id: '3a', pairId: 3, type: 'ritual', icon: '🙊', title: 'He Orders', desc: 'Men order for women in public.',
+              modalTitle: 'Silenced Agency', modalText: '<b>Bias:</b> Etiquette silenced women in financial transactions.<br><br><b>Fix:</b> Using colored balls (Red=Tea, Blue=Coffee) allows everyone to signal needs equally without speaking.' },
+            { id: '3b', pairId: 3, type: 'rewrite', icon: '🔴🔵', title: 'Color Balls', desc: 'Tangible coding for equal voice.',
+              modalTitle: 'Silenced Agency', modalText: '<b>Bias:</b> Etiquette silenced women in financial transactions.<br><br><b>Fix:</b> Using colored balls (Red=Tea, Blue=Coffee) allows everyone to signal needs equally without speaking.' },
+
+            // Pair 4: Talk
+            { id: '4a', pairId: 4, type: 'ritual', icon: '🗣️', title: 'Gossip', desc: 'Tea room talk dismissed as trivial.',
+              modalTitle: 'Trivialization', modalText: '<b>Bias:</b> Dismissing women\'s networks as "Gossip" vs men\'s "Business".<br><br><b>Fix:</b> Redesign the space as a creative boardroom where all dialogue is valued.' },
+            { id: '4b', pairId: 4, type: 'rewrite', icon: '🤝', title: 'Community Hub', desc: 'All conversations have value.',
+              modalTitle: 'Trivialization', modalText: '<b>Bias:</b> Dismissing women\'s networks as "Gossip" vs men\'s "Business".<br><br><b>Fix:</b> Redesign the space as a creative boardroom where all dialogue is valued.' },
+
+            // Pair 5: Service
+            { id: '5a', pairId: 5, type: 'ritual', icon: '👗', title: 'Living Decor', desc: 'Waitress blending into walls.',
+              modalTitle: 'Aesthetic Labor', modalText: '<b>Bias:</b> Treating servers as decorative objects.<br><br><b>Fix:</b> The White Ball signals "Service Needed". It shifts the role from passive servant to professional responder.' },
+            { id: '5b', pairId: 5, type: 'rewrite', icon: '⚪', title: 'White Ball', desc: 'Service on demand, not display.',
+              modalTitle: 'Aesthetic Labor', modalText: '<b>Bias:</b> Treating servers as decorative objects.<br><br><b>Fix:</b> The White Ball signals "Service Needed". It shifts the role from passive servant to professional responder.' },
+
+            // Pair 6: Power
+            { id: '6a', pairId: 6, type: 'ritual', icon: '🧾', title: 'The Bill', desc: 'Handed to the man automatically.',
+              modalTitle: 'Economic Dependence', modalText: '<b>Bias:</b> Assuming the male is the "Provider".<br><br><b>Fix:</b> A neutral payment zone or QR code makes payment a private, functional act, not a gender performance.' },
+            { id: '6b', pairId: 6, type: 'rewrite', icon: '📱', title: 'Neutral Pay', desc: 'Central zone, private payment.',
+              modalTitle: 'Economic Dependence', modalText: '<b>Bias:</b> Assuming the male is the "Provider".<br><br><b>Fix:</b> A neutral payment zone or QR code makes payment a private, functional act, not a gender performance.' }
+        ];
+
+        // --- 2. Game Logic ---
+        const grid = document.getElementById('gameGrid');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const scoreEl = document.getElementById('score');
+        
+        let cards = [];
+        let hasFlippedCard = false;
+        let lockBoard = false;
+        let firstCard, secondCard;
+        let score = 0;
+
+        function initGame() {
+            cards = [...cardsData].sort(() => 0.5 - Math.random());
+            grid.innerHTML = '';
+            cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.classList.add('card');
+                cardEl.dataset.pairId = card.pairId;
+                cardEl.dataset.type = card.type;
+                
+                cardEl.dataset.modalTitle = card.modalTitle;
+                cardEl.dataset.modalText = card.modalText;
+
+                const frontContent = `
+                    <div class="front">
+                        <span style="font-size:1.5rem;">?</span>
+                        <span>${card.type === 'ritual' ? 'RITUAL' : 'REWRITE'}</span>
+                    </div>
+                `;
+
+                const backContent = `
+                    <div class="back">
+                        <div class="icon">${card.icon}</div>
+                        <div class="title">${card.title}</div>
+                        <div class="desc">${card.desc}</div>
+                    </div>
+                `;
+
+                cardEl.innerHTML = frontContent + backContent;
+                cardEl.addEventListener('click', handleCardClick);
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function handleCardClick() {
+            // Review Feature
+            if (this.classList.contains('matched')) {
+                showModal(this.dataset.modalTitle, this.dataset.modalText);
+                return;
+            }
+
+            if (lockBoard) return;
+            if (this === firstCard) return;
+
+            this.classList.add('flip');
+
+            if (!hasFlippedCard) {
+                hasFlippedCard = true;
+                firstCard = this;
+                return;
+            }
+
+            secondCard = this;
+            checkForMatch();
+        }
+
+        function checkForMatch() {
+            let isMatch = firstCard.dataset.pairId === secondCard.dataset.pairId;
+            isMatch ? disableCards() : unflipCards();
+        }
+
+        function disableCards() {
+            lockBoard = true;
+            score++;
+            scoreEl.textContent = score;
+
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+
+            setTimeout(() => {
+                showModal(firstCard.dataset.modalTitle, firstCard.dataset.modalText);
+                resetBoard();
+                if(score === 6) {
+                    setTimeout(() => alert("🎉 Congratulations! All rituals rewritten!"), 800);
+                }
+            }, 600);
+        }
+
+        function unflipCards() {
+            lockBoard = true;
+            setTimeout(() => {
+                firstCard.classList.remove('flip');
+                secondCard.classList.remove('flip');
+                resetBoard();
+            }, 1000);
+        }
+
+        function resetBoard() {
+            [hasFlippedCard, lockBoard] = [false, false];
+            [firstCard, secondCard] = [null, null];
+        }
+
+        function showModal(title, text) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalText').innerHTML = text; 
+            modalOverlay.classList.add('active');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
