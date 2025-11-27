@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ritual Remix</title>
+    <title>Ritual Remix - 习俗重构</title>
     <style>
         /* --- 基础样式 --- */
         :root {
@@ -11,10 +11,11 @@
             --blue-color: #0056b3;
             --green-color: #2E7D32;
             --bg-color: #f4f4f4;
+            --modal-blue: #0056b3;
+            --modal-text: #4a5568;
         }
 
         body {
-            /* 添加中文字体支持 */
             font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', 'SimHei', Arial, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
@@ -23,6 +24,20 @@
             align-items: center;
             min-height: 100vh;
             padding-bottom: 40px;
+            overflow-x: hidden; /* 防止震动时出现滚动条 */
+        }
+
+        /* 屏幕震动动画类 */
+        .shake-screen {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
         h1 {
@@ -45,17 +60,18 @@
         /* --- 游戏网格布局 --- */
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 手机3列 */
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             max-width: 600px;
             width: 95%;
             perspective: 1000px;
             margin-bottom: 40px;
+            transition: opacity 0.5s; /* 爆炸时淡出 */
         }
 
         @media (min-width: 600px) {
             .game-grid {
-                grid-template-columns: repeat(4, 1fr); /* 电脑4列 */
+                grid-template-columns: repeat(4, 1fr);
                 gap: 15px;
             }
         }
@@ -88,11 +104,10 @@
             box-sizing: border-box;
             backface-visibility: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            font-size: 0.9rem; /* 稍微调大字体以适应中文 */
+            font-size: 0.9rem;
             line-height: 1.3;
         }
 
-        /* 正面 (未翻开) */
         .front {
             background-color: #333;
             color: white;
@@ -108,35 +123,25 @@
             background: repeating-linear-gradient(45deg, var(--blue-color), var(--blue-color) 10px, #003d80 10px, #003d80 20px);
         }
 
-        /* 背面 (翻开后) */
         .back {
             background-color: white;
             transform: rotateY(180deg);
             border: 2px solid #ddd;
-            padding-bottom: 25px; /* 底部留出空间给按钮 */
+            padding-bottom: 25px;
         }
 
-        .card[data-type="ritual"] .back {
-            border-top: 8px solid var(--red-color);
-            color: var(--red-color);
-        }
+        .card[data-type="ritual"] .back { border-top: 8px solid var(--red-color); color: var(--red-color); }
+        .card[data-type="rewrite"] .back { border-top: 8px solid var(--blue-color); color: var(--blue-color); }
 
-        .card[data-type="rewrite"] .back {
-            border-top: 8px solid var(--blue-color);
-            color: var(--blue-color);
-        }
-
-        /* --- 修复后的匹配成功样式 --- */
         .card.matched .back {
             border-color: var(--green-color);
             box-shadow: 0 0 10px rgba(46, 125, 50, 0.3);
         }
 
-        /* 绿色小标签 */
         .card.matched .back::after {
             content: "ℹ️ 点击回顾";
             position: absolute;
-            bottom: 8px; /* 固定在底部 */
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 0.65rem;
@@ -149,11 +154,6 @@
             animation: fadeIn 0.5s ease-in-out;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; bottom: 0; }
-            to { opacity: 1; bottom: 8px; }
-        }
-
         .icon { font-size: 1.8rem; margin-bottom: 5px; }
         .title { font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; }
         .desc { font-size: 0.8rem; color: #555; }
@@ -162,7 +162,8 @@
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(5px);
             display: flex; justify-content: center; align-items: center;
             z-index: 100; opacity: 0; pointer-events: none;
             transition: opacity 0.3s;
@@ -170,30 +171,164 @@
         .modal-overlay.active { opacity: 1; pointer-events: all; }
         
         .modal {
-            background: white; padding: 25px; border-radius: 15px;
-            width: 85%; max-width: 400px; text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            background: white; 
+            padding: 24px; 
+            border-radius: 28px;
+            width: 85%; 
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
             position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
         }
-        .modal h2 { color: #333; margin-top: 10px; font-size: 1.2rem;}
-        .modal p { color: #555; line-height: 1.6; font-size: 0.95rem; text-align: left; margin-top: 15px; }
+
+        .modal-image-container {
+            width: 100%;
+            height: auto;
+            display: none; 
+            margin-bottom: 10px;
+        }
+        
+        .modal-image-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            border-radius: 20px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+        }
+
+        .modal-icon-container {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            display: none; 
+        }
+
+        .modal-content-area {
+            padding: 15px 0 0 0; 
+            text-align: left;
+            width: 100%;
+        }
+
+        .modal h2 { 
+            color: var(--modal-blue);
+            margin: 0 0 15px 0; 
+            font-size: 1.3rem;
+            text-align: center;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+
+        .modal p { 
+            color: var(--modal-text); 
+            line-height: 1.6; 
+            font-size: 0.9rem; 
+            margin-bottom: 12px; 
+            text-align: justify;
+        }
+
+        .label-bias, .label-fix { 
+            color: var(--modal-blue); 
+            font-weight: bold; 
+            font-size: 0.95rem;
+        }
         
         .close-btn {
-            background-color: var(--blue-color); color: white;
-            border: none; padding: 12px 30px; border-radius: 25px;
-            cursor: pointer; font-size: 1rem; margin-top: 20px;
+            background: var(--modal-blue); 
+            color: white;
+            border: none; 
+            width: 140px;
+            padding: 10px 0; 
+            border-radius: 50px;
+            cursor: pointer; 
+            font-size: 0.9rem; 
             font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: background 0.2s;
+            box-shadow: 0 6px 12px rgba(0, 86, 179, 0.3);
+            transition: transform 0.1s, box-shadow 0.2s;
+            margin-top: 25px; 
         }
-        .close-btn:hover { background-color: #003d80; }
+        .close-btn:hover { box-shadow: 0 8px 16px rgba(0, 86, 179, 0.4); transform: translateY(-1px); }
+        .close-btn:active { transform: scale(0.98); }
 
+        /* --- 状态栏调整 --- */
         #status-bar {
             margin-bottom: 15px; font-weight: bold;
             background: white; padding: 8px 20px;
             border-radius: 20px; color: var(--blue-color);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+            align-items: center;
         }
+
+        #lives-container {
+            color: #d32f2f;
+        }
+
+        /* --- 爆炸特效 (新增) --- */
+        #explosion-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(255,200,0,1) 0%, rgba(255,50,0,0.8) 50%, rgba(0,0,0,0.95) 100%);
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 200; 
+            opacity: 0; 
+            pointer-events: none;
+            transition: opacity 0.2s;
+            overflow: hidden;
+        }
+
+        #explosion-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+            animation: flash 0.5s ease-out;
+        }
+
+        .boom-text {
+            font-size: 5rem;
+            color: white;
+            font-weight: 900;
+            text-shadow: 0 0 20px black;
+            transform: scale(0);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #explosion-overlay.active .boom-text {
+            transform: scale(1);
+            animation: shake 0.5s infinite;
+        }
+
+        .game-over-btn {
+            margin-top: 50px;
+            background: white;
+            color: #d32f2f;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s 1s, transform 0.5s 1s; /* 延迟显示 */
+        }
+
+        #explosion-overlay.active .game-over-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @keyframes flash {
+            0% { background: white; }
+            100% { background: radial-gradient(circle, rgba(255,69,0,1) 0%, rgba(0,0,0,1) 90%); }
+        }
+
     </style>
 </head>
 <body>
@@ -201,75 +336,73 @@
     <h1>🃏 习俗重构 (Ritual Remix)</h1>
     <p class="instruction">
         翻转卡片，将 <b>历史旧规 (红)</b> 与 <b>解决方案 (蓝)</b> 进行配对。<br>
-        <span style="font-size: 0.8rem; color: var(--green-color);">✨ 提示：点击已配对的卡片可回顾知识点。</span>
+        <span style="font-size: 0.8rem; color: var(--green-color);">✨ 提示：只有 5 次错误机会，小心爆炸！</span>
     </p>
     
-    <div id="status-bar">已配对: <span id="score">0</span> / 6</div>
+    <div id="status-bar">
+        <div>已配对: <span id="score">0</span> / 6</div>
+        <div id="lives-container">生命: <span id="lives">❤️❤️❤️❤️❤️</span></div>
+    </div>
 
     <div class="game-grid" id="gameGrid">
         </div>
 
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
-            <div class="icon" id="modalIcon" style="font-size: 3rem;">✨</div>
-            <h2 id="modalTitle">配对成功！</h2>
-            <p id="modalText">这里显示解释...</p>
+            <div class="modal-image-container" id="modalImageContainer">
+                <img id="modalImg" src="" alt="Explanation">
+            </div>
+
+            <div class="modal-icon-container" id="modalIconContainer">
+                <div class="icon" id="modalIcon" style="font-size: 3rem;">✨</div>
+            </div>
+
+            <div class="modal-content-area">
+                <h2 id="modalTitle">标题</h2>
+                <div id="modalText">内容...</div>
+            </div>
+            
             <button class="close-btn" onclick="closeModal()">继续游戏</button>
         </div>
     </div>
 
+    <div id="explosion-overlay">
+        <div class="boom-text">BOOM!</div>
+        <div style="color: white; font-size: 1.2rem; margin-top: 20px; font-weight: bold;">任务失败，卡牌已销毁</div>
+        <button class="game-over-btn" onclick="location.reload()">重新开始</button>
+    </div>
+
     <script>
-        // --- 1. 游戏数据 (添加了图片路径 image 字段) ---
+        // --- 1. 游戏数据 ---
         const cardsData = [
-            // Pair 1: Space (空间) - 这里替换为图片
-            { 
-              id: '1a', 
-              pairId: 1, 
-              type: 'ritual', 
-              // 注意：请确保图片文件就在 HTML 同级目录下，或者修改为正确的路径
-              image: 'ritual 1.jpg', 
-              title: '明暗之分', // 备用文本，图片加载失败时显示
-              desc: '男士入暗室，女士进明厅。',
+            // Pair 1: Space (空间)
+            { id: '1a', pairId: 1, type: 'ritual', icon: '🚪', title: '明暗之分', desc: '男士入暗室，女士进明厅。',
               modalTitle: '空间刻板印象', 
-              modalText: '<b>偏见：</b> 这种设计强化了男性应该“严肃深沉”，而女性应该“作为装饰”的刻板印象。<br><br><b>修正：</b> 应根据情感需求（如私密性或社交性）而非性别分类来设计空间。' 
+              modalImage: 'Pair 1.jpg',
+              modalText: '<span class="label-bias">偏见：</span>这种设计强化了男性应该“严肃深沉”，而女性应该“作为装饰”的刻板印象。<br><br><span class="label-fix">修正：</span>应根据情感需求（如私密性或社交性）而非性别分类来设计空间。' 
             },
-            { 
-              id: '1b', 
-              pairId: 1, 
-              type: 'rewrite', 
-              // 注意：请确保图片文件就在 HTML 同级目录下，或者修改为正确的路径
-              image: 'rewrite 1.jpg', 
-              title: '随心选座', // 备用文本
-              desc: '按私密需求而非性别落座。',
+            { id: '1b', pairId: 1, type: 'rewrite', icon: '🌗', title: '随心选座', desc: '按私密需求而非性别落座。',
               modalTitle: '空间刻板印象', 
-              modalText: '<b>偏见：</b> 这种设计强化了男性应该“严肃深沉”，而女性应该“作为装饰”的刻板印象。<br><br><b>修正：</b> 应根据情感需求（如私密性或社交性）而非性别分类来设计空间。' 
+              modalImage: 'Pair 1.jpg',
+              modalText: '<span class="label-bias">偏见：</span>这种设计强化了男性应该“严肃深沉”，而女性应该“作为装饰”的刻板印象。<br><br><span class="label-fix">修正：</span>应根据情感需求（如私密性或社交性）而非性别分类来设计空间。' 
             },
-            
-            // Pair 2: Object (物品) - 保持原样
+            // Pair 2-6 保持不变...
             { id: '2a', pairId: 2, type: 'ritual', icon: '🪑', title: '高背椅', desc: '像画框一样框住女性。',
               modalTitle: '被审视的视角', modalText: '<b>偏见：</b> 麦金托什的高背椅像画框一样将女性“框”在其中，使其成为被观赏的对象。<br><br><b>修正：</b> 设计应优先考虑身体的舒适与自由，而非视觉构图。' },
             { id: '2b', pairId: 2, type: 'rewrite', icon: '🛋️', title: '舒适至上', desc: '人体工学优于被观赏性。',
               modalTitle: '被审视的视角', modalText: '<b>偏见：</b> 麦金托什的高背椅像画框一样将女性“框”在其中，使其成为被观赏的对象。<br><br><b>修正：</b> 设计应优先考虑身体的舒适与自由，而非视觉构图。' },
-
-            // Pair 3: Voice (声音)
             { id: '3a', pairId: 3, type: 'ritual', icon: '🙊', title: '他点单', desc: '公共场合由男士代劳点单。',
               modalTitle: '被噤声的自主权', modalText: '<b>偏见：</b> 传统礼仪在交易和点单环节剥夺了女性直接对话的权利。<br><br><b>修正：</b> 使用彩球（红=茶，蓝=咖啡）作为实物代码，让每个人无需开口即可平等表达需求。' },
             { id: '3b', pairId: 3, type: 'rewrite', icon: '🔴🔵', title: '彩球暗号', desc: '实物编码实现平等发声。',
               modalTitle: '被噤声的自主权', modalText: '<b>偏见：</b> 传统礼仪在交易和点单环节剥夺了女性直接对话的权利。<br><br><b>修正：</b> 使用彩球（红=茶，蓝=咖啡）作为实物代码，让每个人无需开口即可平等表达需求。' },
-
-            // Pair 4: Talk (谈话)
             { id: '4a', pairId: 4, type: 'ritual', icon: '🗣️', title: '闲言碎语', desc: '茶室谈话被视为琐碎闲聊。',
               modalTitle: '话题贬低', modalText: '<b>偏见：</b> 将女性的社交网络贬低为“八卦”，而男性的谈话则是“生意”。<br><br><b>修正：</b> 将空间重塑为创意会议室，在这里所有形式的对话都具有同等价值。' },
             { id: '4b', pairId: 4, type: 'rewrite', icon: '🤝', title: '社区中心', desc: '所有对话皆有价值。',
               modalTitle: '话题贬低', modalText: '<b>偏见：</b> 将女性的社交网络贬低为“八卦”，而男性的谈话则是“生意”。<br><br><b>修正：</b> 将空间重塑为创意会议室，在这里所有形式的对话都具有同等价值。' },
-
-            // Pair 5: Service (服务)
             { id: '5a', pairId: 5, type: 'ritual', icon: '👗', title: '活体装饰', desc: '女侍者与墙壁融为一体。',
               modalTitle: '美学劳役', modalText: '<b>偏见：</b> 这种设计将服务人员视为环境中的装饰摆设，而非职业劳动者。<br><br><b>修正：</b> 白色信号球代表“需要服务”。这使角色从被动的侍从转变为主动响应的专业人员。' },
             { id: '5b', pairId: 5, type: 'rewrite', icon: '⚪', title: '白色信号球', desc: '按需服务，而非展示。',
               modalTitle: '美学劳役', modalText: '<b>偏见：</b> 这种设计将服务人员视为环境中的装饰摆设，而非职业劳动者。<br><br><b>修正：</b> 白色信号球代表“需要服务”。这使角色从被动的侍从转变为主动响应的专业人员。' },
-
-            // Pair 6: Power (权力)
             { id: '6a', pairId: 6, type: 'ritual', icon: '🧾', title: '账单', desc: '账单自动递给男士。',
               modalTitle: '经济依附', modalText: '<b>偏见：</b> 默认预设男性为唯一的“供养者”或买单人。<br><br><b>修正：</b> 设置中立支付区或二维码，使付款成为一种私密的、功能性的行为，而非一种性别表演。' },
             { id: '6b', pairId: 6, type: 'rewrite', icon: '📱', title: '中立支付', desc: '中央区域，私密支付。',
@@ -280,16 +413,27 @@
         const grid = document.getElementById('gameGrid');
         const modalOverlay = document.getElementById('modalOverlay');
         const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
+        const explosionOverlay = document.getElementById('explosion-overlay');
         
         let cards = [];
         let hasFlippedCard = false;
         let lockBoard = false;
         let firstCard, secondCard;
         let score = 0;
+        
+        // 新增：生命值变量
+        let lives = 5;
+        const maxLives = 5;
 
         function initGame() {
             cards = [...cardsData].sort(() => 0.5 - Math.random());
             grid.innerHTML = '';
+            
+            // 重置生命值
+            lives = maxLives;
+            updateLivesDisplay();
+
             cards.forEach(card => {
                 const cardEl = document.createElement('div');
                 cardEl.classList.add('card');
@@ -298,6 +442,7 @@
                 
                 cardEl.dataset.modalTitle = card.modalTitle;
                 cardEl.dataset.modalText = card.modalText;
+                if(card.modalImage) cardEl.dataset.modalImage = card.modalImage;
 
                 const frontContent = `
                     <div class="front">
@@ -306,17 +451,14 @@
                     </div>
                 `;
 
-                // --- 修改点：这里判断是否有图片 ---
                 let backContent = '';
                 if (card.image) {
-                    // 如果有图片，直接铺满显示图片
                     backContent = `
                         <div class="back" style="padding: 0; border: none; overflow: hidden;">
                             <img src="${card.image}" alt="${card.title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
                         </div>
                     `;
                 } else {
-                    // 如果没有图片，显示原来的图标+文字布局
                     backContent = `
                         <div class="back">
                             <div class="icon">${card.icon}</div>
@@ -332,9 +474,18 @@
             });
         }
 
+        function updateLivesDisplay() {
+            let hearts = '';
+            for(let i=0; i<maxLives; i++) {
+                if(i < lives) hearts += '❤️';
+                else hearts += '💔'; // 失去的生命显示为破碎的心
+            }
+            livesEl.textContent = hearts;
+        }
+
         function handleCardClick() {
             if (this.classList.contains('matched')) {
-                showModal(this.dataset.modalTitle, this.dataset.modalText);
+                showModal(this.dataset.modalTitle, this.dataset.modalText, this.dataset.modalImage);
                 return;
             }
 
@@ -366,9 +517,8 @@
             firstCard.classList.add('matched');
             secondCard.classList.add('matched');
 
-            // 保持之前修改的时间设置（2秒后弹窗）
             setTimeout(() => {
-                showModal(firstCard.dataset.modalTitle, firstCard.dataset.modalText);
+                showModal(firstCard.dataset.modalTitle, firstCard.dataset.modalText, firstCard.dataset.modalImage);
                 resetBoard();
                 if(score === 6) {
                     setTimeout(() => alert("🎉 恭喜！所有旧俗已完成重构！"), 800);
@@ -378,12 +528,35 @@
 
         function unflipCards() {
             lockBoard = true;
-            // 保持之前修改的时间设置（3秒后翻回）
-            setTimeout(() => {
-                firstCard.classList.remove('flip');
-                secondCard.classList.remove('flip');
-                resetBoard();
-            }, 1500); 
+            
+            // --- 惩罚逻辑 ---
+            lives--;
+            updateLivesDisplay();
+            
+            // 屏幕震动反馈
+            document.body.classList.add('shake-screen');
+            setTimeout(() => document.body.classList.remove('shake-screen'), 500);
+
+            if (lives <= 0) {
+                // 如果生命耗尽，触发爆炸
+                setTimeout(() => {
+                    triggerExplosion();
+                }, 800);
+            } else {
+                // 如果还有生命，正常翻回
+                setTimeout(() => {
+                    firstCard.classList.remove('flip');
+                    secondCard.classList.remove('flip');
+                    resetBoard();
+                }, 1500); 
+            }
+        }
+
+        function triggerExplosion() {
+            // 显示爆炸层
+            explosionOverlay.classList.add('active');
+            // 隐藏游戏网格
+            grid.style.opacity = '0';
         }
 
         function resetBoard() {
@@ -391,9 +564,23 @@
             [firstCard, secondCard] = [null, null];
         }
 
-        function showModal(title, text) {
+        function showModal(title, text, image) {
+            const imgContainer = document.getElementById('modalImageContainer');
+            const iconContainer = document.getElementById('modalIconContainer');
+            const modalImg = document.getElementById('modalImg');
+
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalText').innerHTML = text; 
+
+            if (image) {
+                imgContainer.style.display = 'block';
+                iconContainer.style.display = 'none';
+                modalImg.src = image; 
+            } else {
+                imgContainer.style.display = 'none';
+                iconContainer.style.display = 'block';
+            }
+
             modalOverlay.classList.add('active');
         }
 
@@ -405,4 +592,3 @@
     </script>
 </body>
 </html>
-
