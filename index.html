@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ritual Remix - 习俗重构</title>
     <style>
-        /* --- 基础样式 --- */
+        /* --- 1. 基础变量 --- */
         :root {
             --red-color: #8B0000;
             --blue-color: #0056b3;
@@ -13,6 +13,7 @@
             --bg-color: #f4f4f4;
             --modal-blue: #0056b3;
             --modal-text: #4a5568;
+            --btn-disabled: #cccccc;
         }
 
         body {
@@ -23,16 +24,16 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            padding-bottom: 40px;
-            overflow-x: hidden; /* 防止震动时出现滚动条 */
+            /* 关键修复：大幅增加底部内边距，防止按钮遮挡最后一张卡牌 */
+            padding-bottom: 160px; 
+            overflow-x: hidden;
         }
 
-        /* 屏幕震动动画类 */
+        /* --- 2. 动画效果 --- */
         .shake-screen {
             animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
             transform: translate3d(0, 0, 0);
         }
-
         @keyframes shake {
             10%, 90% { transform: translate3d(-1px, 0, 0); }
             20%, 80% { transform: translate3d(2px, 0, 0); }
@@ -40,116 +41,86 @@
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
 
-        h1 {
-            margin-top: 20px;
-            font-size: 1.5rem;
-            color: #333;
-            text-align: center;
-        }
+        h1 { margin-top: 20px; font-size: 1.5rem; color: #333; text-align: center; }
 
         p.instruction {
-            font-size: 0.9rem;
-            color: #666;
-            text-align: center;
-            margin-bottom: 15px;
-            padding: 0 20px;
-            max-width: 600px;
-            line-height: 1.5;
+            font-size: 0.9rem; color: #666; text-align: center;
+            margin-bottom: 15px; padding: 0 20px; max-width: 600px; line-height: 1.5;
         }
 
-        /* --- 游戏网格布局 --- */
+        /* --- 3. 网格布局 --- */
         .game-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-            max-width: 600px;
-            width: 95%;
+            max-width: 600px; width: 95%;
             perspective: 1000px;
-            margin-bottom: 40px;
-            transition: opacity 0.5s; /* 爆炸时淡出 */
+            margin-bottom: 20px; /* 这里的边距可以稍微减小，因为body padding够大了 */
+            transition: opacity 0.5s;
         }
-
         @media (min-width: 600px) {
-            .game-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 15px;
-            }
+            .game-grid { grid-template-columns: repeat(4, 1fr); gap: 15px; }
         }
 
-        /* --- 卡片样式 --- */
+        /* --- 4. 卡片样式 --- */
         .card {
-            background-color: transparent;
-            height: 160px;
-            cursor: pointer;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.6s;
+            background-color: transparent; height: 160px;
+            cursor: pointer; position: relative;
+            transform-style: preserve-3d; transition: transform 0.6s;
+            /* 确保卡片层级正确 */
+            z-index: 1; 
         }
 
-        .card.flip {
-            transform: rotateY(180deg);
-        }
+        .card.flip { transform: rotateY(180deg); }
 
         .front, .back {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 8px;
-            box-sizing: border-box;
-            backface-visibility: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            font-size: 0.9rem;
-            line-height: 1.3;
+            width: 100%; height: 100%; position: absolute;
+            border-radius: 10px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            padding: 8px; box-sizing: border-box; backface-visibility: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 0.9rem; line-height: 1.3;
         }
 
+        /* 正面样式 */
         .front {
-            background-color: #333;
-            color: white;
-            font-weight: bold;
-            border: 2px solid white;
+            background-color: #333; color: white; font-weight: bold; border: 2px solid white;
         }
-
         .card[data-type="ritual"] .front {
             background: repeating-linear-gradient(45deg, var(--red-color), var(--red-color) 10px, #600000 10px, #600000 20px);
         }
-
         .card[data-type="rewrite"] .front {
             background: repeating-linear-gradient(45deg, var(--blue-color), var(--blue-color) 10px, #003d80 10px, #003d80 20px);
         }
 
+        /* 背面样式 */
         .back {
-            background-color: white;
-            transform: rotateY(180deg);
-            border: 2px solid #ddd;
-            padding-bottom: 25px;
+            background-color: white; transform: rotateY(180deg);
+            border: 2px solid #ddd; padding-bottom: 25px;
+        }
+        .card[data-type="ritual"] .back { 
+            border-top: 8px solid var(--red-color); 
+            color: var(--red-color); 
+        }
+        .card[data-type="rewrite"] .back { 
+            border-top: 8px solid var(--blue-color); 
+            color: var(--blue-color); 
         }
 
-        .card[data-type="ritual"] .back { border-top: 8px solid var(--red-color); color: var(--red-color); }
-        .card[data-type="rewrite"] .back { border-top: 8px solid var(--blue-color); color: var(--blue-color); }
+        /* 翻开/选中状态：添加轻微阴影，不改变边框 */
+        .card.flip .back {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
+        }
 
+        /* 匹配成功样式 */
         .card.matched .back {
-            border-color: var(--green-color);
+            border-color: var(--green-color); 
             box-shadow: 0 0 10px rgba(46, 125, 50, 0.3);
         }
-
         .card.matched .back::after {
-            content: "ℹ️ 点击回顾";
-            position: absolute;
-            bottom: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.65rem;
-            background-color: var(--green-color);
-            color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
-            white-space: nowrap;
+            content: "ℹ️ 点击回顾"; position: absolute; bottom: 8px; left: 50%;
+            transform: translateX(-50%); font-size: 0.65rem;
+            background-color: var(--green-color); color: white;
+            padding: 3px 8px; border-radius: 10px; white-space: nowrap;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             animation: fadeIn 0.5s ease-in-out;
         }
@@ -158,178 +129,95 @@
         .title { font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; }
         .desc { font-size: 0.8rem; color: #555; }
 
-        /* --- 弹窗样式 --- */
+        /* --- 5. 确认按钮区域 --- */
+        #action-bar {
+            position: fixed; bottom: 20px; left: 0; width: 100%;
+            display: flex; justify-content: center; 
+            pointer-events: none; /* 容器穿透点击，避免遮挡左右两侧 */
+            z-index: 50;
+        }
+
+        #confirm-btn {
+            pointer-events: auto; /* 只有按钮本体阻挡点击 */
+            background-color: var(--btn-disabled);
+            color: white; border: none;
+            padding: 15px 50px; border-radius: 50px;
+            font-size: 1.1rem; font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+
+        #confirm-btn.active {
+            background-color: var(--blue-color);
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 86, 179, 0.4);
+            transform: scale(1.05);
+        }
+        #confirm-btn.active:active { transform: scale(0.95); }
+
+        /* --- 6. 弹窗样式 --- */
         .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(5px);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(5px);
             display: flex; justify-content: center; align-items: center;
-            z-index: 100; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s;
+            z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
         }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
         
         .modal {
-            background: white; 
-            padding: 24px; 
-            border-radius: 28px;
-            width: 85%; 
-            max-width: 360px;
-            text-align: center;
+            background: white; padding: 24px; border-radius: 28px;
+            width: 85%; max-width: 360px; text-align: center;
             box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: flex; flex-direction: column; align-items: center;
             box-sizing: border-box;
         }
-
-        .modal-image-container {
-            width: 100%;
-            height: auto;
-            display: none; 
-            margin-bottom: 10px;
-        }
-        
-        .modal-image-container img {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: cover;
-            border-radius: 20px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
-        }
-
-        .modal-icon-container {
-            margin-top: 10px;
-            margin-bottom: 20px;
-            display: none; 
-        }
-
-        .modal-content-area {
-            padding: 15px 0 0 0; 
-            text-align: left;
-            width: 100%;
-        }
-
-        .modal h2 { 
-            color: var(--modal-blue);
-            margin: 0 0 15px 0; 
-            font-size: 1.3rem;
-            text-align: center;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-        }
-
-        .modal p { 
-            color: var(--modal-text); 
-            line-height: 1.6; 
-            font-size: 0.9rem; 
-            margin-bottom: 12px; 
-            text-align: justify;
-        }
-
-        .label-bias, .label-fix { 
-            color: var(--modal-blue); 
-            font-weight: bold; 
-            font-size: 0.95rem;
-        }
+        .modal-image-container { width: 100%; height: auto; display: none; margin-bottom: 10px; }
+        .modal-image-container img { width: 100%; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .modal-icon-container { margin-top: 10px; margin-bottom: 20px; display: none; }
+        .modal-content-area { padding: 15px 0 0 0; text-align: left; width: 100%; }
+        .modal h2 { color: var(--modal-blue); margin: 0 0 15px 0; font-size: 1.3rem; font-weight: 900; }
+        .modal p { color: var(--modal-text); line-height: 1.6; font-size: 0.9rem; margin-bottom: 12px; text-align: justify; }
+        .label-bias, .label-fix { color: var(--modal-blue); font-weight: bold; font-size: 0.95rem; }
         
         .close-btn {
-            background: var(--modal-blue); 
-            color: white;
-            border: none; 
-            width: 140px;
-            padding: 10px 0; 
-            border-radius: 50px;
-            cursor: pointer; 
-            font-size: 0.9rem; 
-            font-weight: bold;
+            background: var(--modal-blue); color: white; border: none; width: 140px;
+            padding: 10px 0; border-radius: 50px; cursor: pointer;
+            font-size: 0.9rem; font-weight: bold; margin-top: 25px;
             box-shadow: 0 6px 12px rgba(0, 86, 179, 0.3);
-            transition: transform 0.1s, box-shadow 0.2s;
-            margin-top: 25px; 
         }
-        .close-btn:hover { box-shadow: 0 8px 16px rgba(0, 86, 179, 0.4); transform: translateY(-1px); }
-        .close-btn:active { transform: scale(0.98); }
 
-        /* --- 状态栏调整 --- */
+        /* --- 7. 状态栏 & 爆炸特效 --- */
         #status-bar {
             margin-bottom: 15px; font-weight: bold;
             background: white; padding: 8px 20px;
             border-radius: 20px; color: var(--blue-color);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap; /* <--- 添加这一行，红心太多时会自动换行，不会超出屏幕 */
-            justify-content: center; /* 让内容居中 */
+            display: flex; gap: 20px; align-items: center; flex-wrap: wrap; justify-content: center;
         }
+        #lives-container { color: #d32f2f; }
 
-        #lives-container {
-            color: #d32f2f;
-        }
-
-        /* --- 爆炸特效 (新增) --- */
         #explosion-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle, rgba(255,200,0,1) 0%, rgba(255,50,0,0.8) 50%, rgba(0,0,0,0.95) 100%);
-            display: flex; 
-            flex-direction: column;
-            justify-content: center; align-items: center;
-            z-index: 200; 
-            opacity: 0; 
-            pointer-events: none;
-            transition: opacity 0.2s;
-            overflow: hidden;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
         }
-
-        #explosion-overlay.active {
-            opacity: 1;
-            pointer-events: all;
-            animation: flash 0.5s ease-out;
-        }
-
+        #explosion-overlay.active { opacity: 1; pointer-events: all; animation: flash 0.5s ease-out; }
         .boom-text {
-            font-size: 5rem;
-            color: white;
-            font-weight: 900;
-            text-shadow: 0 0 20px black;
-            transform: scale(0);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 5rem; color: white; font-weight: 900; text-shadow: 0 0 20px black;
+            transform: scale(0); transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
-        #explosion-overlay.active .boom-text {
-            transform: scale(1);
-            animation: shake 0.5s infinite;
-        }
-
+        #explosion-overlay.active .boom-text { transform: scale(1); animation: shake 0.5s infinite; }
         .game-over-btn {
-            margin-top: 50px;
-            background: white;
-            color: #d32f2f;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            border-radius: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.5s 1s, transform 0.5s 1s; /* 延迟显示 */
+            margin-top: 50px; background: white; color: #d32f2f; border: none; padding: 15px 40px;
+            font-size: 1.2rem; border-radius: 30px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5); opacity: 0; transform: translateY(20px);
+            transition: opacity 0.5s 1s, transform 0.5s 1s;
         }
-
-        #explosion-overlay.active .game-over-btn {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        @keyframes flash {
-            0% { background: white; }
-            100% { background: radial-gradient(circle, rgba(255,69,0,1) 0%, rgba(0,0,0,1) 90%); }
-        }
+        #explosion-overlay.active .game-over-btn { opacity: 1; transform: translateY(0); }
+        @keyframes flash { 0% { background: white; } 100% { background: radial-gradient(circle, rgba(255,69,0,1) 0%, rgba(0,0,0,1) 90%); } }
 
     </style>
 </head>
@@ -337,33 +225,36 @@
 
     <h1>🃏 习俗重构 (Ritual Remix)</h1>
     <p class="instruction">
-        翻转卡片，将 <b>历史旧规 (红)</b> 与 <b>解决方案 (蓝)</b> 进行配对。<br>
-        <span style="font-size: 0.8rem; color: var(--green-color);">✨ 提示：只有 5 次错误机会，小心爆炸！</span>
+        <b>游戏规则：</b><br>
+        1. 翻开任意两张卡牌。<br>
+        2. 若想更换，点击已翻开的卡牌将其盖回。<br>
+        3. 确定选择后，点击底部<b>“确认配对”</b>按钮。
     </p>
     
     <div id="status-bar">
         <div>已配对: <span id="score">0</span> / 6</div>
-        <div id="lives-container">生命: <span id="lives">❤️❤️❤️❤️❤️❤️❤️❤️</span></div>
+        <div id="lives-container">生命: <span id="lives">❤️❤️❤️</span></div>
     </div>
 
     <div class="game-grid" id="gameGrid">
         </div>
+
+    <div id="action-bar">
+        <button id="confirm-btn" onclick="triggerConfirmMatch()">请翻开两张牌</button>
+    </div>
 
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <div class="modal-image-container" id="modalImageContainer">
                 <img id="modalImg" src="" alt="Explanation">
             </div>
-
             <div class="modal-icon-container" id="modalIconContainer">
                 <div class="icon" id="modalIcon" style="font-size: 3rem;">✨</div>
             </div>
-
             <div class="modal-content-area">
                 <h2 id="modalTitle">标题</h2>
                 <div id="modalText">内容...</div>
             </div>
-            
             <button class="close-btn" onclick="closeModal()">继续游戏</button>
         </div>
     </div>
@@ -377,34 +268,33 @@
     <script>
         // --- 1. 游戏数据 ---
         const cardsData = [
-            // Pair 1: Space (空间)
             { id: '1a', pairId: 1, type: 'ritual', icon: '🚪', title: '明暗之分', desc: '男士入暗室，女士进明厅。',
-              modalTitle: '空间刻板印象', 
-              modalImage: 'Pair 1.jpg',
-              modalText: '<span class="label-bias">偏见：</span>这种设计强化了男性应该“严肃深沉”，而女性应该“作为装饰”的刻板印象。<br><br><span class="label-fix">修正：</span>应根据情感需求（如私密性或社交性）而非性别分类来设计空间。' 
-            },
+              modalTitle: '空间刻板印象', modalImage: 'Pair 1.jpg',
+              modalText: '<span class="label-bias">偏见：</span>这种设计强化了男性应该“严肃深沉”，而女性应该“作为装饰”的刻板印象。<br><br><span class="label-fix">修正：</span>应根据情感需求（如私密性或社交性）而非性别分类来设计空间。' },
             { id: '1b', pairId: 1, type: 'rewrite', icon: '🌗', title: '随心选座', desc: '按私密需求而非性别落座。',
-              modalTitle: '空间刻板印象', 
-              modalImage: 'Pair 1.jpg',
-              modalText: '<span class="label-bias">偏见：</span>这种设计强化了男性应该“严肃深沉”，而女性应该“作为装饰”的刻板印象。<br><br><span class="label-fix">修正：</span>应根据情感需求（如私密性或社交性）而非性别分类来设计空间。' 
-            },
-            // Pair 2-6 保持不变...
+              modalTitle: '空间刻板印象', modalImage: 'Pair 1.jpg',
+              modalText: '<span class="label-bias">偏见：</span>这种设计强化了男性应该“严肃深沉”，而女性应该“作为装饰”的刻板印象。<br><br><span class="label-fix">修正：</span>应根据情感需求（如私密性或社交性）而非性别分类来设计空间。' },
+            
             { id: '2a', pairId: 2, type: 'ritual', icon: '🪑', title: '高背椅', desc: '像画框一样框住女性。',
               modalTitle: '被审视的视角', modalText: '<b>偏见：</b> 麦金托什的高背椅像画框一样将女性“框”在其中，使其成为被观赏的对象。<br><br><b>修正：</b> 设计应优先考虑身体的舒适与自由，而非视觉构图。' },
             { id: '2b', pairId: 2, type: 'rewrite', icon: '🛋️', title: '舒适至上', desc: '人体工学优于被观赏性。',
               modalTitle: '被审视的视角', modalText: '<b>偏见：</b> 麦金托什的高背椅像画框一样将女性“框”在其中，使其成为被观赏的对象。<br><br><b>修正：</b> 设计应优先考虑身体的舒适与自由，而非视觉构图。' },
+            
             { id: '3a', pairId: 3, type: 'ritual', icon: '🙊', title: '他点单', desc: '公共场合由男士代劳点单。',
               modalTitle: '被噤声的自主权', modalText: '<b>偏见：</b> 传统礼仪在交易和点单环节剥夺了女性直接对话的权利。<br><br><b>修正：</b> 使用彩球（红=茶，蓝=咖啡）作为实物代码，让每个人无需开口即可平等表达需求。' },
             { id: '3b', pairId: 3, type: 'rewrite', icon: '🔴🔵', title: '彩球暗号', desc: '实物编码实现平等发声。',
               modalTitle: '被噤声的自主权', modalText: '<b>偏见：</b> 传统礼仪在交易和点单环节剥夺了女性直接对话的权利。<br><br><b>修正：</b> 使用彩球（红=茶，蓝=咖啡）作为实物代码，让每个人无需开口即可平等表达需求。' },
+            
             { id: '4a', pairId: 4, type: 'ritual', icon: '🗣️', title: '闲言碎语', desc: '茶室谈话被视为琐碎闲聊。',
               modalTitle: '话题贬低', modalText: '<b>偏见：</b> 将女性的社交网络贬低为“八卦”，而男性的谈话则是“生意”。<br><br><b>修正：</b> 将空间重塑为创意会议室，在这里所有形式的对话都具有同等价值。' },
             { id: '4b', pairId: 4, type: 'rewrite', icon: '🤝', title: '社区中心', desc: '所有对话皆有价值。',
               modalTitle: '话题贬低', modalText: '<b>偏见：</b> 将女性的社交网络贬低为“八卦”，而男性的谈话则是“生意”。<br><br><b>修正：</b> 将空间重塑为创意会议室，在这里所有形式的对话都具有同等价值。' },
+            
             { id: '5a', pairId: 5, type: 'ritual', icon: '👗', title: '活体装饰', desc: '女侍者与墙壁融为一体。',
               modalTitle: '美学劳役', modalText: '<b>偏见：</b> 这种设计将服务人员视为环境中的装饰摆设，而非职业劳动者。<br><br><b>修正：</b> 白色信号球代表“需要服务”。这使角色从被动的侍从转变为主动响应的专业人员。' },
             { id: '5b', pairId: 5, type: 'rewrite', icon: '⚪', title: '白色信号球', desc: '按需服务，而非展示。',
               modalTitle: '美学劳役', modalText: '<b>偏见：</b> 这种设计将服务人员视为环境中的装饰摆设，而非职业劳动者。<br><br><b>修正：</b> 白色信号球代表“需要服务”。这使角色从被动的侍从转变为主动响应的专业人员。' },
+            
             { id: '6a', pairId: 6, type: 'ritual', icon: '🧾', title: '账单', desc: '账单自动递给男士。',
               modalTitle: '经济依附', modalText: '<b>偏见：</b> 默认预设男性为唯一的“供养者”或买单人。<br><br><b>修正：</b> 设置中立支付区或二维码，使付款成为一种私密的、功能性的行为，而非一种性别表演。' },
             { id: '6b', pairId: 6, type: 'rewrite', icon: '📱', title: '中立支付', desc: '中央区域，私密支付。',
@@ -416,32 +306,30 @@
         const modalOverlay = document.getElementById('modalOverlay');
         const scoreEl = document.getElementById('score');
         const livesEl = document.getElementById('lives');
+        const confirmBtn = document.getElementById('confirm-btn');
         const explosionOverlay = document.getElementById('explosion-overlay');
         
         let cards = [];
-        let hasFlippedCard = false;
-        let lockBoard = false;
-        let firstCard, secondCard;
         let score = 0;
-        
-        // 新增：生命值变量
-        let lives = 8;
-        const maxLives = 8;
+        let lives = 3;
+        const maxLives = 3;
+        let selectedCards = []; 
 
         function initGame() {
             cards = [...cardsData].sort(() => 0.5 - Math.random());
             grid.innerHTML = '';
             
-            // 重置生命值
             lives = maxLives;
+            score = 0;
+            scoreEl.textContent = score;
             updateLivesDisplay();
+            resetSelection(); 
 
             cards.forEach(card => {
                 const cardEl = document.createElement('div');
                 cardEl.classList.add('card');
                 cardEl.dataset.pairId = card.pairId;
                 cardEl.dataset.type = card.type;
-                
                 cardEl.dataset.modalTitle = card.modalTitle;
                 cardEl.dataset.modalText = card.modalText;
                 if(card.modalImage) cardEl.dataset.modalImage = card.modalImage;
@@ -479,8 +367,7 @@
         function updateLivesDisplay() {
             let hearts = '';
             for(let i=0; i<maxLives; i++) {
-                if(i < lives) hearts += '❤️';
-                else hearts += '💔'; // 失去的生命显示为破碎的心
+                hearts += (i < lives) ? '❤️' : '💔';
             }
             livesEl.textContent = hearts;
         }
@@ -491,79 +378,90 @@
                 return;
             }
 
-            if (lockBoard) return;
-            if (this === firstCard) return;
-
-            this.classList.add('flip');
-
-            if (!hasFlippedCard) {
-                hasFlippedCard = true;
-                firstCard = this;
+            // 点击已翻开的 -> 盖回去
+            if (this.classList.contains('flip')) {
+                this.classList.remove('flip');
+                selectedCards = selectedCards.filter(card => card !== this);
+                updateConfirmButton();
                 return;
             }
 
-            secondCard = this;
-            checkForMatch();
-        }
-
-        function checkForMatch() {
-            let isMatch = firstCard.dataset.pairId === secondCard.dataset.pairId;
-            isMatch ? disableCards() : unflipCards();
-        }
-
-        function disableCards() {
-            lockBoard = true;
-            score++;
-            scoreEl.textContent = score;
-
-            firstCard.classList.add('matched');
-            secondCard.classList.add('matched');
-
-            setTimeout(() => {
-                showModal(firstCard.dataset.modalTitle, firstCard.dataset.modalText, firstCard.dataset.modalImage);
-                resetBoard();
-                if(score === 6) {
-                    setTimeout(() => alert("🎉 恭喜！所有旧俗已完成重构！"), 800);
-                }
-            }, 1000); 
-        }
-
-        function unflipCards() {
-            lockBoard = true;
-            
-            // --- 惩罚逻辑 ---
-            lives--;
-            updateLivesDisplay();
-            
-            // 屏幕震动反馈
-            document.body.classList.add('shake-screen');
-            setTimeout(() => document.body.classList.remove('shake-screen'), 500);
-
-            if (lives <= 0) {
-                // 如果生命耗尽，触发爆炸
-                setTimeout(() => {
-                    triggerExplosion();
-                }, 800);
+            // 点击未翻开的 -> 尝试翻开 (最多2张)
+            if (selectedCards.length < 2) {
+                this.classList.add('flip');
+                selectedCards.push(this);
+                updateConfirmButton();
             } else {
-                // 如果还有生命，正常翻回
-                setTimeout(() => {
-                    firstCard.classList.remove('flip');
-                    secondCard.classList.remove('flip');
-                    resetBoard();
-                }, 1500); 
+                // 提示震动
+                this.style.transform = "translateX(5px)";
+                setTimeout(() => this.style.transform = "translateX(0)", 100);
             }
         }
 
-        function triggerExplosion() {
-            // 显示爆炸层
-            explosionOverlay.classList.add('active');
-            // 隐藏游戏网格
-            grid.style.opacity = '0';
+        function updateConfirmButton() {
+            if (selectedCards.length === 2) {
+                confirmBtn.classList.add('active');
+                confirmBtn.textContent = "确认配对";
+            } else {
+                confirmBtn.classList.remove('active');
+                confirmBtn.textContent = selectedCards.length === 1 ? "请再翻一张" : "请翻开两张牌";
+            }
         }
 
-        function resetBoard() {
-            [hasFlippedCard, lockBoard] = [false, false];
-            [firstCard, secondCard] = [null, null];
+        function triggerConfirmMatch() {
+            if (selectedCards.length !== 2) return;
+
+            const card1 = selectedCards[0];
+            const card2 = selectedCards[1];
+
+            if (card1.dataset.pairId === card2.dataset.pairId) {
+                // 配对成功
+                score++;
+                scoreEl.textContent = score;
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                
+                showModal(card1.dataset.modalTitle, card1.dataset.modalText, card1.dataset.modalImage);
+                
+                resetSelection();
+                if(score === 6) {
+                    setTimeout(() => alert("🎉 恭喜！所有旧俗已完成重构！"), 800);
+                }
+            } else {
+                // 配对失败
+                lives--;
+                updateLivesDisplay();
+                document.body.classList.add('shake-screen');
+                setTimeout(() => document.body.classList.remove('shake-screen'), 500);
+
+                const originalText = confirmBtn.textContent;
+                confirmBtn.style.backgroundColor = "#d32f2f";
+                confirmBtn.textContent = "配对错误！生命-1";
+
+                setTimeout(() => {
+                    confirmBtn.style.backgroundColor = ""; 
+                    confirmBtn.textContent = originalText;
+
+                    if (lives <= 0) {
+                        triggerExplosion();
+                    } else {
+                        card1.classList.remove('flip');
+                        card2.classList.remove('flip');
+                        resetSelection();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetSelection() {
+            selectedCards = [];
+            updateConfirmButton();
+        }
+
+        function triggerExplosion() {
+            explosionOverlay.classList.add('active');
+            grid.style.opacity = '0';
+            confirmBtn.style.display = 'none';
         }
 
         function showModal(title, text, image) {
@@ -582,7 +480,6 @@
                 imgContainer.style.display = 'none';
                 iconContainer.style.display = 'block';
             }
-
             modalOverlay.classList.add('active');
         }
 
