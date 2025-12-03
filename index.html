@@ -220,16 +220,17 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: transparent; border: none;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            padding: 10px 15px 55px 15px; 
+            padding: 10px 15px 65px 15px; 
             box-sizing: border-box; z-index: 2; pointer-events: none;
         }
         .text-overlay .card-title {
-            font-weight: 900; font-size: 1.1rem; color: #000; margin-bottom: 8px;
+            font-weight: 900; font-size: 1rem; color: #000; margin-bottom: 8px;
             text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
         }
         .text-overlay .card-desc {
-            font-size: 0.85rem; color: #333; line-height: 1.4; font-weight: bold;
+            font-size: 0.80rem; color: #333; line-height: 1.3; font-weight: bold;
             text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            
         }
         .text-overlay .card-icon {
             font-size: 2.5rem; margin-bottom: 10px;
@@ -250,7 +251,7 @@
         }
         #confirm-btn.active {
             background-color: var(--blue-color); cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0, 86, 179, 0.4);
+            box-shadow: 0 8px 20px #582a57;
         }
         #confirm-btn.active:active { transform: scale(0.96); }
 
@@ -400,74 +401,86 @@
     <script>
         // --- 1. 数据集分离 ---
         
-        // 难度：普通 (原版数据)
+        // 难度：普通 (Hard/Normal text from your prompt)
         const dataNormal = [
-            { id: '1a', pairId: 1, type: 'ritual', icon: '', title: 'Invisible Service', desc: 'Servers wore the same color as the walls.',
-              modalTitle: 'Spatial Stereotypes', image: 'card1-red1.jpg', modalImage: 'Pair 1.jpg',
-              modalText: '<span class="label-bias">Bias: </span>This design reinforces the stereotype that men should be "serious/deep" while women are "decorative".<br><br><span class="label-fix">Fix: </span>Spaces should be designed based on emotional needs (privacy or social) rather than gender.' },
-            { id: '1b', pairId: 1, type: 'rewrite', icon: '', title: '', desc: 'Different uniform colors of servers show different roles. ',
-              modalTitle: 'Spatial Stereotypes', image: 'card1-blue1.jpg', modalImage: 'Pair 1.jpg',
-              modalText: '<span class="label-bias">Bias: </span>This design reinforces the stereotype that men should be "serious/deep" while women are "decorative".<br><br><span class="label-fix">Fix: </span>Spaces should be designed based on emotional needs (privacy or social) rather than gender.' },
+            // Pair 1 (Space - Light/Dark)
+            { id: '1a', pairId: 1, type: 'ritual', icon: '', title: 'Light/Dark Spaces', desc: 'Men’s rooms were darker; women’s rooms were brighter.',
+              modalTitle: 'Light/Dark Spaces', image: 'card1-red1.jpg', modalImage: 'Pair 1.jpg',
+              modalText: '<span class="label-bias">Bias: </span>In the past, men\'s spaces were often designed to be darker to create a serious, focused atmosphere suitable for business talks and contemplation. Women\'s spaces, on the other hand, were brighter and more relaxed, making it easier for socializing and personal grooming.<br><br><span class="label-fix">Fix: </span>Spaces no longer need to be divided by gender—people can freely choose different rooms and lighting based on their needs.' },
+            { id: '1b', pairId: 1, type: 'rewrite', icon: '', title: 'Choose by Mood', desc: 'No one belongs to a specific room.',
+              modalTitle: 'Light/Dark Spaces', image: 'card1-blue1.jpg', modalImage: 'Pair 1.jpg',
+              modalText: '<span class="label-bias">Bias: </span>In the past, men\'s spaces were often designed to be darker to create a serious, focused atmosphere suitable for business talks and contemplation. Women\'s spaces, on the other hand, were brighter and more relaxed, making it easier for socializing and personal grooming.<br><br><span class="label-fix">Fix: </span>Spaces no longer need to be divided by gender—people can freely choose different rooms and lighting based on their needs.' },
             
-            { id: '2a', pairId: 2, type: 'ritual', icon: '', title: 'High-back Chair', desc: 'Frames women like a picture.',
-              modalTitle: 'The Male Gaze', image: 'card1-red1.jpg', modalText: '<b>Bias: </b> Mackintosh\'s high-back chairs frame women, making them objects to be looked at.<br><br><b>Fix: </b> Design should prioritize physical comfort and freedom, not visual composition.' },
-            { id: '2b', pairId: 2, type: 'rewrite', icon: '', title: 'Comfort First', desc: 'Ergonomics over being watched.',
-              modalTitle: 'The Male Gaze', image: 'card1-blue1.jpg', modalText: '<b>Bias: </b> Mackintosh\'s high-back chairs frame women, making them objects to be looked at.<br><br><b>Fix: </b> Design should prioritize physical comfort and freedom, not visual composition.' },
+            // Pair 2 (Updated: Missing Names)
+            { id: '2a', pairId: 2, type: 'ritual', icon: '', title: 'Missing Names', desc: 'There’s space on the list, but it rarely carries their names.',
+              modalTitle: 'Missing Names → Her Signature Appears', image: 'card1-red1.jpg', modalImage: 'Pair 2.jpg', modalText: '<span class="label-bias">Bias: </span>For a long time, women contributed to design, service, and creative work, but their names were rarely shown. Men signed the ideas. Women’s labor stayed invisible and undervalued.<br><br><span class="label-fix">Fix: </span>In places like the Willow Tea Rooms, women began to have their names written on menus, design work, and management roles. Their contributions were seen as professional Their handwriting finally appeared where it belonged.' },
+            { id: '2b', pairId: 2, type: 'rewrite', icon: '', title: 'Her Signature', desc: 'She appears on menus, designs and ownership signs.',
+              modalTitle: 'Missing Names → Her Signature Appears', image: 'card1-blue1.jpg', modalImage: 'Pair 2.jpg', modalText: '<span class="label-bias">Bias: </span>For a long time, women contributed to design, service, and creative work, but their names were rarely shown. Men signed the ideas. Women’s labor stayed invisible and undervalued.<br><br><span class="label-fix">Fix: </span>In places like the Willow Tea Rooms, women began to have their names written on menus, design work, and management roles. Their contributions were seen as professional Their handwriting finally appeared where it belonged.' },
             
-            { id: '3a', pairId: 3, type: 'ritual', icon: '', title: 'He Orders', desc: 'Men order for women in public.',
-              modalTitle: 'Silenced Autonomy', image: 'card1-red1.jpg', modalText: '<b>Bias: </b> Traditional etiquette deprives women of direct dialogue in transactions.<br><br><b>Fix: </b> Use colored balls (Red=Tea, Blue=Coffee) as physical codes so everyone expresses needs equally without speaking.' },
-            { id: '3b', pairId: 3, type: 'rewrite', icon: '', title: 'Color Code', desc: 'Physical code for equal voice.',
-              modalTitle: 'Silenced Autonomy', image: 'card1-blue1.jpg', modalText: '<b>Bias: </b> Traditional etiquette deprives women of direct dialogue in transactions.<br><br><b>Fix: </b> Use colored balls (Red=Tea, Blue=Coffee) as physical codes so everyone expresses needs equally without speaking.' },
+            // Pair 3 (Updated: Built for Men)
+            { id: '3a', pairId: 3, type: 'ritual', icon: '', title: 'Built for Men', desc: 'High stools, dark wooden tables, rough decorations',
+              modalTitle: 'Built for Men → Designed for Her', image: 'card1-red1.jpg', modalImage: 'Pair 3.jpg', modalText: '<span class="label-bias">Bias: </span>Historical public spaces were designed around male habits: tall stools, heavy dark furniture, smoky air, low lighting. Women often felt out of place, uncomfortable, or unsafe.<br><br><span class="label-fix">Fix: </span>Willow Tea Rooms transformed the environment. Mackintosh used light-colored wood,  floral motifs, patterned glass, bright palettes, and soft lighting to create a space where women could sit comfortably, see and be seen, and participate equally in public life.' },
+            { id: '3b', pairId: 3, type: 'rewrite', icon: '', title: 'Designed for Her', desc: 'soft chandeliers and bright colors reshape the room.',
+              modalTitle: 'Built for Men → Designed for Her', image: 'card1-blue1.jpg', modalImage: 'Pair 3.jpg', modalText: '<span class="label-bias">Bias: </span>Historical public spaces were designed around male habits: tall stools, heavy dark furniture, smoky air, low lighting. Women often felt out of place, uncomfortable, or unsafe.<br><br><span class="label-fix">Fix: </span>Willow Tea Rooms transformed the environment. Mackintosh used light-colored wood,  floral motifs, patterned glass, bright palettes, and soft lighting to create a space where women could sit comfortably, see and be seen, and participate equally in public life.' },
             
-            { id: '4a', pairId: 4, type: 'ritual', icon: '', title: 'Gossip', desc: 'Tea room talk seen as trivial.',
-              modalTitle: 'Trivialized Topics', image: 'card1-red1.jpg', modalImage: 'Pair 2.jpg', modalText: '<b>Bias: </b> Devaluing women\'s social networks as "gossip" while men\'s talk is "business".<br><br><b>Fix: </b> Reframe the space as a creative meeting room where all forms of dialogue have equal value.' },
-            { id: '4b', pairId: 4, type: 'rewrite', icon: '', title: 'Community Hub', desc: 'All conversations have value.',
-              modalTitle: 'Trivialized Topics', image: 'card1-blue1.jpg', modalImage: 'Pair 2.jpg', modalText: '<b>Bias: </b> Devaluing women\'s social networks as "gossip" while men\'s talk is "business".<br><br><b>Fix: </b> Reframe the space as a creative meeting room where all forms of dialogue have equal value.' },
+            // Pair 4 (Gossip)
+            { id: '4a', pairId: 4, type: 'ritual', icon: '', title: 'Gossip.', desc: 'Women’s discussions were often considered as gossip.',
+              modalTitle: 'Gossip', image: 'card1-red1.jpg', modalImage: 'Pair 4.jpg', modalText: '<span class="label-bias">Bias: </span>Before the 20th century, women were not allowed to discuss politics, and their conversations were usually limited to daily life, often dismissed as gossip.<br><br><span class="label-fix">Fix: </span>At the Willow Tea Rooms, women not only exchanged information but also shared opinions. The tea room became a public forum, witnessing the exercise of civic rights.' },
+            { id: '4b', pairId: 4, type: 'rewrite', icon: '', title: 'Public Forum', desc: 'More and more decisions began to include women’s voices.',
+              modalTitle: 'Gossip', image: 'card1-blue1.jpg', modalImage: 'Pair 4.jpg', modalText: '<span class="label-bias">Bias: </span>Before the 20th century, women were not allowed to discuss politics, and their conversations were usually limited to daily life, often dismissed as gossip.<br><br><span class="label-fix">Fix: </span>At the Willow Tea Rooms, women not only exchanged information but also shared opinions. The tea room became a public forum, witnessing the exercise of civic rights.' },
             
-            { id: '5a', pairId: 5, type: 'ritual', icon: '', title: 'Living Decor', desc: 'Waitresses blend into walls.',
-              modalTitle: 'Aesthetic Labor', image: 'card1-red1.jpg', modalText: '<b>Bias: </b> Treating service staff as decorative fixtures rather than professional workers.<br><br><b>Fix: </b> White signal ball represents "service needed". This shifts the role from passive servant to active professional.' },
-            { id: '5b', pairId: 5, type: 'rewrite', icon: '', title: 'Service Signal', desc: 'Service on demand, not display.',
-              modalTitle: 'Aesthetic Labor', image: 'card1-blue1.jpg', modalText: '<b>Bias: </b> Treating service staff as decorative fixtures rather than professional workers.<br><br><b>Fix: </b> White signal ball represents "service needed". This shifts the role from passive servant to active professional.' },
+            // Pair 5 (Service - Invisible Service)
+            { id: '5a', pairId: 5, type: 'ritual', icon: '', title: 'Invisible Service', desc: 'Servers wore the same color as the walls.',
+              modalTitle: 'Invisible Service', image: 'card1-red1.jpg', modalImage: 'Pair 5.jpg', modalText: '<span class="label-bias">Bias: </span>In the early days, female servers were not seen as professionals to be noticed. They were expected to stay quiet and not disturb customers. Their uniforms often matched the walls, making them blend in and hard to see.<br><br><span class="label-fix">Fix: </span>Today, servers are respected professionals and don’t need to stay hidden. Their uniforms have different colors to show their roles, making them easier for customers to see and appreciate.' },
+            { id: '5b', pairId: 5, type: 'rewrite', icon: '', title: 'Visible Roles', desc: 'Guests can easily see where the servers are.',
+              modalTitle: 'Invisible Service', image: 'card1-blue1.jpg', modalText: '<span class="label-bias">Bias: </span>In the early days, female servers were not seen as professionals to be noticed. They were expected to stay quiet and not disturb customers. Their uniforms often matched the walls, making them blend in and hard to see.<br><br><span class="label-fix">Fix: </span>Today, servers are respected professionals and don’t need to stay hidden. Their uniforms have different colors to show their roles, making them easier for customers to see and appreciate.' },
             
-            { id: '6a', pairId: 6, type: 'ritual', icon: '', title: 'The Bill', desc: 'Bill handed to men automatically.',
-              modalTitle: 'Economic Dependence', image: 'card1-red1.jpg', modalText: '<b>Bias: </b> Default assumption that men are the sole "providers" or payers.<br><br><b>Fix: </b> Neutral payment zones or QR codes make payment a private, functional act, not a gender performance.' },
-            { id: '6b', pairId: 6, type: 'rewrite', icon: '', title: 'Neutral Pay', desc: 'Central zone, private payment.',
-              modalTitle: 'Economic Dependence', image: 'card1-blue1.jpg', modalText: '<b>Bias: </b> Default assumption that men are the sole "providers" or payers.<br><br><b>Fix: </b> Neutral payment zones or QR codes make payment a private, functional act, not a gender performance.' }
+            // Pair 6 (Updated: Forbidden Glass)
+            { id: '6a', pairId: 6, type: 'ritual', icon: '', title: 'Forbidden Glass', desc: 'Men Chers freely in the room, while women stay cautious.',
+              modalTitle: 'Forbidden Glass → A Space for Everyone', image: 'card1-red1.jpg', modalImage: 'Pair 6.jpg', modalText: '<span class="label-bias">Bias: </span>Historically, drinking in public was considered a “male activity.”Bars and pubs were loud and unsafe for women. This made public social life unequal, as women could not participate freely or stay for long.<br><br><span class="label-fix">Fix: </span>Willow Tea Rooms created a different type of public space: bright, calm, and entirely alcohol-free, open to everyone regardless of gender. Both women and men could sit, talk, and spend time without the alcohol culture.' },
+            { id: '6b', pairId: 6, type: 'rewrite', icon: '', title: 'Alcohol-Free Space', desc: 'Tea and polite talks create a social space without alcohol.',
+              modalTitle: 'Forbidden Glass → A Space for Everyone', image: 'card1-blue1.jpg', modalImage: 'Pair 6.jpg', modalText: '<span class="label-bias">Bias: </span>Historically, drinking in public was considered a “male activity.”Bars and pubs were loud and unsafe for women. This made public social life unequal, as women could not participate freely or stay for long.<br><br><span class="label-fix">Fix: </span>Willow Tea Rooms created a different type of public space: bright, calm, and entirely alcohol-free, open to everyone regardless of gender. Both women and men could sit, talk, and spend time without the alcohol culture.' }
         ];
 
-        // 难度：简单 (更直白，适合青少年)
+        // 难度：简单 (Simple text from your prompt)
         const dataSimple = [
-            { id: '1a', pairId: 1, type: 'ritual', icon: '', title: 'Separated Seats', desc: 'Strict rules: Men in dark, Women in light.',
-              modalTitle: 'Seating Rules', image: 'card1-red1.jpg', modalImage: 'Pair 1.jpg',
-              modalText: '<b>Old Way:</b> Rules forced men into dark "serious" rooms and women into bright "pretty" rooms.<br><br><b>New Way:</b> Forget gender! Pick your seat based on your mood: dark for secrets, bright for sunshine.' },
-            { id: '1b', pairId: 1, type: 'rewrite', icon: '', title: 'Pick Your Spot', desc: 'Sit where you feel comfortable.',
-              modalTitle: 'Seating Rules', image: 'card1-blue1.jpg', modalImage: 'Pair 1.jpg',
-              modalText: '<b>Old Way:</b> Rules forced men into dark "serious" rooms and women into bright "pretty" rooms.<br><br><b>New Way:</b> Forget gender! Pick your seat based on your mood: dark for secrets, bright for sunshine.' },
+            // Pair 1 (Space - Light/Dark)
+            { id: '1a', pairId: 1, type: 'ritual', icon: '', title: 'Light/Dark Spaces', desc: 'Men’s rooms were darker; women’s rooms were brighter.',
+              modalTitle: 'Light/Dark Spaces', image: 'card1-red1.jpg', modalImage: 'Pair 1.jpg',
+              modalText: '<span class="label-bias">Bias: </span>In the past, men\'s spaces were often designed to be darker to create a serious, focused atmosphere suitable for business talks and contemplation. Women\'s spaces, on the other hand, were brighter and more relaxed, making it easier for socializing and personal grooming.<br><br><span class="label-fix">Fix: </span>Spaces no longer need to be divided by gender—people can freely choose different rooms and lighting based on their needs.' },
+            { id: '1b', pairId: 1, type: 'rewrite', icon: '', title: 'Choose by Mood', desc: 'Customers can choose a room based on their needs.',
+              modalTitle: 'Light/Dark Spaces', image: 'card1-blue1.jpg', modalImage: 'Pair 1.jpg',
+              modalText: '<span class="label-bias">Bias: </span>In the past, men\'s spaces were often designed to be darker to create a serious, focused atmosphere suitable for business talks and contemplation. Women\'s spaces, on the other hand, were brighter and more relaxed, making it easier for socializing and personal grooming.<br><br><span class="label-fix">Fix: </span>Spaces no longer need to be divided by gender—people can freely choose different rooms and lighting based on their needs.' },
             
-            { id: '2a', pairId: 2, type: 'ritual', icon: '', title: 'Frame Chair', desc: 'Chairs designed to look at women.',
-              modalTitle: 'Just for Looks', image: 'card1-red1.jpg', modalText: '<b>Old Way:</b> High-back chairs acted like picture frames, turning women into "art" to be looked at.<br><br><b>New Way:</b> Chairs are for sitting! Design should make you feel comfortable, not watched.' },
-            { id: '2b', pairId: 2, type: 'rewrite', icon: '', title: 'Comfy Chair', desc: 'Designed for sitting, not posing.',
-              modalTitle: 'Just for Looks', image: 'card1-blue1.jpg', modalText: '<b>Old Way:</b> High-back chairs acted like picture frames, turning women into "art" to be looked at.<br><br><b>New Way:</b> Chairs are for sitting! Design should make you feel comfortable, not watched.' },
+            // Pair 2 (Updated: Missing Names)
+            { id: '2a', pairId: 2, type: 'ritual', icon: '', title: 'Missing Names', desc: 'There’s space on the list, but it rarely carries their names.',
+              modalTitle: 'Missing Names → Her Signature Appears', image: 'card1-red1.jpg', modalImage: 'Pair 2.jpg', modalText: '<span class="label-bias">Bias: </span>For a long time, women contributed to design, service, and creative work, but their names were rarely shown. Men signed the ideas. Women’s labor stayed invisible and undervalued.<br><br><span class="label-fix">Fix: </span>In places like the Willow Tea Rooms, women began to have their names written on menus, design work, and management roles. Their contributions were seen as professional Their handwriting finally appeared where it belonged.' },
+            { id: '2b', pairId: 2, type: 'rewrite', icon: '', title: 'Her Signature', desc: 'The important signature now carries her handwriting.',
+              modalTitle: 'Missing Names → Her Signature Appears', image: 'card1-blue1.jpg', modalImage: 'Pair 2.jpg', modalText: '<span class="label-bias">Bias: </span>For a long time, women contributed to design, service, and creative work, but their names were rarely shown. Men signed the ideas. Women’s labor stayed invisible and undervalued.<br><br><span class="label-fix">Fix: </span>In places like the Willow Tea Rooms, women began to have their names written on menus, design work, and management roles. Their contributions were seen as professional Their handwriting finally appeared where it belonged.' },
             
-            { id: '3a', pairId: 3, type: 'ritual', icon: '', title: 'Silent Order', desc: 'Women couldn\'t order for themselves.',
-              modalTitle: 'Speaking Up', image: 'card1-red1.jpg', modalText: '<b>Old Way:</b> It was considered "impolite" for women to speak to waiters directly.<br><br><b>New Way:</b> Use colored balls! Red for Tea, Blue for Coffee. Everyone gets what they want without awkward rules.' },
-            { id: '3b', pairId: 3, type: 'rewrite', icon: '', title: 'Ball Signal', desc: 'Use tools to speak freely.',
-              modalTitle: 'Speaking Up', image: 'card1-blue1.jpg', modalText: '<b>Old Way:</b> It was considered "impolite" for women to speak to waiters directly.<br><br><b>New Way:</b> Use colored balls! Red for Tea, Blue for Coffee. Everyone gets what they want without awkward rules.' },
+            // Pair 3 (Updated: Built for Men)
+            { id: '3a', pairId: 3, type: 'ritual', icon: '', title: 'Built for Men', desc: 'High stools, dark wooden tables, rough decorations',
+              modalTitle: 'Built for Men → Designed for Her', image: 'card1-red1.jpg', modalImage: 'Pair 3.jpg', modalText: '<span class="label-bias">Bias: </span>Historical public spaces were designed around male habits: tall stools, heavy dark furniture, smoky air, low lighting. Women often felt out of place, uncomfortable, or unsafe.<br><br><span class="label-fix">Fix: </span>Willow Tea Rooms transformed the environment. Mackintosh used light-colored wood,  floral motifs, patterned glass, bright palettes, and soft lighting to create a space where women could sit comfortably, see and be seen, and participate equally in public life.' },
+            { id: '3b', pairId: 3, type: 'rewrite', icon: '', title: 'Designed for Her', desc: 'Light-colored make the space welcoming for women.',
+              modalTitle: 'Built for Men → Designed for Her', image: 'card1-blue1.jpg', modalImage: 'Pair 3.jpg', modalText: '<span class="label-bias">Bias: </span>Historical public spaces were designed around male habits: tall stools, heavy dark furniture, smoky air, low lighting. Women often felt out of place, uncomfortable, or unsafe.<br><br><span class="label-fix">Fix: </span>Willow Tea Rooms transformed the environment. Mackintosh used light-colored wood,  floral motifs, patterned glass, bright palettes, and soft lighting to create a space where women could sit comfortably, see and be seen, and participate equally in public life.' },
             
-            { id: '4a', pairId: 4, type: 'ritual', icon: '', title: 'Just Gossip', desc: 'Women\'s talk was ignored.',
-              modalTitle: 'Power Talk', image: 'card1-red1.jpg', modalImage: 'Pair 2.jpg', modalText: '<b>Old Way:</b> People thought women only talked about clothes and trivia ("gossip").<br><br><b>New Way:</b> This is a Voting Hall! Talking creates power and changes the future.' },
-            { id: '4b', pairId: 4, type: 'rewrite', icon: '', title: 'Voting Hall', desc: 'Talking changes the world.',
-              modalTitle: 'Power Talk', image: 'card1-blue1.jpg', modalImage: 'Pair 2.jpg', modalText: '<b>Old Way:</b> People thought women only talked about clothes and trivia ("gossip").<br><br><b>New Way:</b> This is a Voting Hall! Talking creates power and changes the future.' },
+            // Pair 4 (Gossip)
+            { id: '4a', pairId: 4, type: 'ritual', icon: '', title: 'Gossip.', desc: 'Women’s discussions were often considered as gossip.',
+              modalTitle: 'Gossip', image: 'card1-red1.jpg', modalImage: 'Pair 4.jpg', modalText: '<span class="label-bias">Bias: </span>Before the 20th century, women were not allowed to discuss politics, and their conversations were usually limited to daily life, often dismissed as gossip.<br><br><span class="label-fix">Fix: </span>At the Willow Tea Rooms, women not only exchanged information but also shared opinions. The tea room became a public forum, witnessing the exercise of civic rights.' },
+            { id: '4b', pairId: 4, type: 'rewrite', icon: '', title: 'Public Forum', desc: 'Every conversation is treated as equally meaningful.',
+              modalTitle: 'Gossip', image: 'card1-blue1.jpg', modalImage: 'Pair 4.jpg', modalText: '<span class="label-bias">Bias: </span>Before the 20th century, women were not allowed to discuss politics, and their conversations were usually limited to daily life, often dismissed as gossip.<br><br><span class="label-fix">Fix: </span>At the Willow Tea Rooms, women not only exchanged information but also shared opinions. The tea room became a public forum, witnessing the exercise of civic rights.' },
             
-            { id: '5a', pairId: 5, type: 'ritual', icon: '', title: 'Invisible Staff', desc: 'Uniforms matched the wallpaper.',
-              modalTitle: 'Not a Decoration', image: 'card1-red1.jpg', modalText: '<b>Old Way:</b> Waitresses wore dresses matching the walls so they would be "invisible".<br><br><b>New Way:</b> Hold up a white ball! This means "I am working". Staff are pros, not decorations.' },
-            { id: '5b', pairId: 5, type: 'rewrite', icon: '', title: 'Active Pro', desc: 'Staff stand out and help.',
-              modalTitle: 'Not a Decoration', image: 'card1-blue1.jpg', modalText: '<b>Old Way:</b> Waitresses wore dresses matching the walls so they would be "invisible".<br><br><b>New Way:</b> Hold up a white ball! This means "I am working". Staff are pros, not decorations.' },
+            // Pair 5 (Service - Invisible Service)
+            { id: '5a', pairId: 5, type: 'ritual', icon: '', title: 'Invisible Service', desc: 'Servers wore the same color as the walls.',
+              modalTitle: 'Invisible Service', image: 'card1-red1.jpg', modalImage: 'Pair 5.jpg', modalText: '<span class="label-bias">Bias: </span>In the early days, female servers were not seen as professionals to be noticed. They were expected to stay quiet and not disturb customers. Their uniforms often matched the walls, making them blend in and hard to see.<br><br><span class="label-fix">Fix: </span>Today, servers are respected professionals and don’t need to stay hidden. Their uniforms have different colors to show their roles, making them easier for customers to see and appreciate.' },
+            { id: '5b', pairId: 5, type: 'rewrite', icon: '', title: 'Visible Roles', desc: 'Different uniform colors of servers show different roles.',
+              modalTitle: 'Invisible Service', image: 'card1-blue1.jpg', modalImage: 'Pair 5.jpg', modalText: '<span class="label-bias">Bias: </span>In the early days, female servers were not seen as professionals to be noticed. They were expected to stay quiet and not disturb customers. Their uniforms often matched the walls, making them blend in and hard to see.<br><br><span class="label-fix">Fix: </span>Today, servers are respected professionals and don’t need to stay hidden. Their uniforms have different colors to show their roles, making them easier for customers to see and appreciate.' },
             
-            { id: '6a', pairId: 6, type: 'ritual', icon: '', title: 'Man Pays', desc: 'Bill always went to the man.',
-              modalTitle: 'Who Pays?', image: 'card1-red1.jpg', modalText: '<b>Old Way:</b> Waiters assumed the man always had the money.<br><br><b>New Way:</b> Neutral Payment Zone. Anyone can scan a QR code. Paying is just paying, not a show.' },
-            { id: '6b', pairId: 6, type: 'rewrite', icon: '', title: 'QR Pay', desc: 'Anyone can pay privately.',
-              modalTitle: 'Who Pays?', image: 'card1-blue1.jpg', modalText: '<b>Old Way:</b> Waiters assumed the man always had the money.<br><br><b>New Way:</b> Neutral Payment Zone. Anyone can scan a QR code. Paying is just paying, not a show.' }
+            // Pair 6 (Updated: Forbidden Glass)
+            { id: '6a', pairId: 6, type: 'ritual', icon: '', title: 'Forbidden Glass', desc: 'Men Chers freely in the room, while women stay cautious.',
+              modalTitle: 'Forbidden Glass → A Space for Everyone', image: 'card1-red1.jpg', modalImage: 'Pair 6.jpg', modalText: '<span class="label-bias">Bias: </span>Historically, drinking in public was considered a “male activity.”Bars and pubs were loud and unsafe for women. This made public social life unequal, as women could not participate freely or stay for long.<br><br><span class="label-fix">Fix: </span>Willow Tea Rooms created a different type of public space: bright, calm, and entirely alcohol-free, open to everyone regardless of gender. Both women and men could sit, talk, and spend time without the alcohol culture.' },
+            { id: '6b', pairId: 6, type: 'rewrite', icon: '', title: 'Alcohol-Free Space', desc: 'Sitting down to chat without alcohol, quiet and dignified.',
+              modalTitle: 'Forbidden Glass → A Space for Everyone', image: 'card1-blue1.jpg', modalImage: 'Pair 6.jpg', modalText: '<span class="label-bias">Bias: </span>Historically, drinking in public was considered a “male activity.”Bars and pubs were loud and unsafe for women. This made public social life unequal, as women could not participate freely or stay for long.<br><br><span class="label-fix">Fix: </span>Willow Tea Rooms created a different type of public space: bright, calm, and entirely alcohol-free, open to everyone regardless of gender. Both women and men could sit, talk, and spend time without the alcohol culture.' }
         ];
 
         // --- 3. 游戏状态 ---
@@ -627,7 +640,6 @@
             const card2 = selectedCards[1];
 
             if (card1.dataset.pairId === card2.dataset.pairId) {
-                // --- 配对成功 ---
                 card1.classList.add('matched');
                 card2.classList.add('matched');
                 
@@ -641,7 +653,6 @@
                     setTimeout(() => alert("🎉 Congratulations! All rituals have been remixed!"), 800);
                 }
             } else {
-                // --- 配对失败 ---
                 lockBoard = true;
                 lives--;
                 updateLivesDisplay();
