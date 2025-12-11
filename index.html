@@ -378,74 +378,133 @@
         }
 
         /* =========================================
-           📱 移动端适配代码 (Mobile Optimization)
-           针对 iPhone 14 及其他手机屏幕的修复
+           📱 移动端深度适配 (Mobile Specific)
            ========================================= */
         @media screen and (max-width: 600px) {
             
-            /* 1. 调整网格间距，让卡片稍微宽一点 */
-            .game-grid {
-                width: 98%; /* 占满更多屏幕宽度 */
-                gap: 8px;   /* 减小卡片之间的缝隙 */
+            /* --- 1. 状态栏优化 (强制一行不换行) --- */
+            #status-bar {
+                width: 95%;           /* 宽度占满 */
+                padding: 8px 5px;     /* 减小内边距 */
+                gap: 4px;             /* 极小的间距，挤在一起 */
+                flex-wrap: nowrap;    /* 【关键】强制不换行 */
+                justify-content: space-between; /* 两端对齐 */
+                font-size: 0.75rem;   /* 整体字号缩小 */
+                box-sizing: border-box;
             }
 
-            /* 2. 调整卡片高度，保持比例 */
-            .card {
-                height: 170px; /* 稍微减小高度，适配视线 */
-            }
-
-            /* 3. 压缩文字层的内边距，给文字留出更多空间 */
-            .text-overlay {
-                /* 上左右内边距减小，底部留白从 65px 减小到 40px */
-                padding: 5px 4px 40px 4px; 
-            }
-
-            /* 4. 缩小图标 */
-            .text-overlay .card-icon {
-                font-size: 1.8rem; /* 从 2.5rem 缩小 */
-                margin-bottom: 4px;
-            }
-
-            /* 5. 缩小标题 */
-            .text-overlay .card-title {
-                font-size: 0.85rem; /* 缩小字号 */
-                line-height: 1.1;
-                margin-bottom: 4px;
-                -webkit-line-clamp: 2; /* 限制标题最多2行 */
-            }
-
-            /* 6. 缩小描述文字，增加行数限制 */
-            .text-overlay .card-desc {
-                font-size: 0.65rem; /* 缩小字号以显示更多内容 */
-                line-height: 1.2;
-                -webkit-line-clamp: 5; /* 允许显示更多行数 (之前是4) */
-            }
-
-            /* 7. 调整 Review 按钮的位置和大小 */
-            .card.matched .back::after {
-                font-size: 0.7rem;   /* 按钮文字变小 */
-                padding: 4px 12px;   /* 按钮尺寸变小 */
-                bottom: 10px;        /* 按钮更靠下，给文字腾地方 */
-                border-radius: 15px;
-            }
-
-            /* 8. 调整落地页标题大小，防止换行太难看 */
-            #landing-title {
-                font-size: 2rem;
-                margin-bottom: 30px;
+            /* 调整状态栏里的按钮大小 */
+            #rules-btn, #back-btn {
+                padding: 4px 8px;     /* 按钮变小 */
+                font-size: 0.75rem;
+                margin: 0;            /* 去掉额外的边距 */
+                white-space: nowrap;  /* 防止按钮内文字换行 */
             }
             
-            /* 9. 调整底部操作栏位置 */
+            /* 调整生命值显示的间距 */
+            #lives-container {
+                letter-spacing: -2px; /* 爱心这就紧凑一点 */
+            }
+
+            /* --- 2. 卡牌网格调整 --- */
+            .game-grid {
+                width: 98%;  /* 几乎占满屏幕宽度 */
+                gap: 6px;    /* 卡牌间距更小 */
+            }
+
+            /* --- 3. 卡牌内容适配 (确保文字完整) --- */
+            .card {
+                height: 175px; /* 稍微给高一点点空间 */
+            }
+
+            .text-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* --- 关键：保证垂直居中 --- */
+            align-items: center;
+            /* padding: 10px 10px 65px 10px; <-- 删除原来的这行 */
+            padding: 20px; /* --- 新增：设置统一的舒适内边距 --- */
+            box-sizing: border-box;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+            /* 图标缩小 */
+            .text-overlay .card-icon {
+                font-size: 1.6rem; 
+                margin-bottom: 2px;
+            }
+
+            /* 标题缩小 */
+            .text-overlay .card-title {
+                font-size: 0.8rem;
+                line-height: 1.1;
+                margin-bottom: 2px;
+                /* 标题最多2行，超出省略 */
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            /* 描述文字缩小 (核心修复点) */
+            .text-overlay .card-desc {
+                font-size: 0.6rem;  /* 极小字号，保证能放下 */
+                line-height: 1.2;
+                font-weight: normal; /* 手机上太粗会糊，改成正常粗细 */
+                
+                /* 允许显示更多行，确保文字不被切掉 */
+                display: -webkit-box;
+                -webkit-line-clamp: 5; 
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            /* --- 4. Review 按钮适配 --- */
+            .card.matched .back::after {
+                content: "review";
+            position: absolute;
+            /* bottom: 20px;  <-- 删除原来的这行 */
+            bottom: 10%;   /* --- 新增：向上调整位置，例如距离底部 25% 的地方 --- */
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.85rem;
+            font-weight: bold;
+            background-color: var(--review-btn-color);
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(88, 42, 87, 0.3); /* 加一点阴影让它更有层次感 */
+            animation: fadeIn 0.5s ease-in-out;
+            pointer-events: auto;
+            z-index: 5;
+        }
+
+            /* --- 5. 底部操作栏和按钮 --- */
             #action-bar {
                 bottom: 20px;
+                width: 90%;
             }
-            
-            /* 10. 调整确认按钮大小 */
             #confirm-btn {
-                min-width: 180px;
-                width: 180px;
+                width: 100%;
+                min-width: unset; /* 取消最小宽度限制 */
                 font-size: 1rem;
                 padding: 12px 0;
+            }
+            
+            /* --- 6. 成功提示条位置修正 --- */
+            #success-toast {
+                width: 80%; /* 防止提示条太宽超出屏幕 */
+                font-size: 1.2rem;
+                padding: 15px 20px;
             }
         }
     </style>
