@@ -376,6 +376,78 @@
             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
             100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } /* 下落到底部并旋转 */
         }
+
+        /* =========================================
+           📱 移动端适配代码 (Mobile Optimization)
+           针对 iPhone 14 及其他手机屏幕的修复
+           ========================================= */
+        @media screen and (max-width: 600px) {
+            
+            /* 1. 调整网格间距，让卡片稍微宽一点 */
+            .game-grid {
+                width: 98%; /* 占满更多屏幕宽度 */
+                gap: 8px;   /* 减小卡片之间的缝隙 */
+            }
+
+            /* 2. 调整卡片高度，保持比例 */
+            .card {
+                height: 170px; /* 稍微减小高度，适配视线 */
+            }
+
+            /* 3. 压缩文字层的内边距，给文字留出更多空间 */
+            .text-overlay {
+                /* 上左右内边距减小，底部留白从 65px 减小到 40px */
+                padding: 5px 4px 40px 4px; 
+            }
+
+            /* 4. 缩小图标 */
+            .text-overlay .card-icon {
+                font-size: 1.8rem; /* 从 2.5rem 缩小 */
+                margin-bottom: 4px;
+            }
+
+            /* 5. 缩小标题 */
+            .text-overlay .card-title {
+                font-size: 0.85rem; /* 缩小字号 */
+                line-height: 1.1;
+                margin-bottom: 4px;
+                -webkit-line-clamp: 2; /* 限制标题最多2行 */
+            }
+
+            /* 6. 缩小描述文字，增加行数限制 */
+            .text-overlay .card-desc {
+                font-size: 0.65rem; /* 缩小字号以显示更多内容 */
+                line-height: 1.2;
+                -webkit-line-clamp: 5; /* 允许显示更多行数 (之前是4) */
+            }
+
+            /* 7. 调整 Review 按钮的位置和大小 */
+            .card.matched .back::after {
+                font-size: 0.7rem;   /* 按钮文字变小 */
+                padding: 4px 12px;   /* 按钮尺寸变小 */
+                bottom: 10px;        /* 按钮更靠下，给文字腾地方 */
+                border-radius: 15px;
+            }
+
+            /* 8. 调整落地页标题大小，防止换行太难看 */
+            #landing-title {
+                font-size: 2rem;
+                margin-bottom: 30px;
+            }
+            
+            /* 9. 调整底部操作栏位置 */
+            #action-bar {
+                bottom: 20px;
+            }
+            
+            /* 10. 调整确认按钮大小 */
+            #confirm-btn {
+                min-width: 180px;
+                width: 180px;
+                font-size: 1rem;
+                padding: 12px 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -384,8 +456,8 @@
         <div id="landing-title">Ritual Rewrite</div>
         
         <div class="difficulty-container">
-            <button class="diff-btn" onclick="selectDifficulty('simple')">Easy</button>
-            <button class="diff-btn" onclick="selectDifficulty('normal')">Hard</button>
+            <button class="diff-btn" onclick="selectDifficulty('simple')">Level 1</button>
+            <button class="diff-btn" onclick="selectDifficulty('normal')">Level 2</button>
         </div>
 
         <button id="landing-start-btn" onclick="startGame()">Start Game</button>
